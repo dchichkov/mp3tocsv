@@ -1,6 +1,14 @@
 -*- text -*-
 
 ************************************
+*** mp3tocsv, subband extractor
+*** MP3 -> CSV -> CDR -> WAV     ***  (c) 2010 Dmitry Chichkov
+************************************
+
+
+
+
+************************************
 *** madlld -- MAD low-level      ***  v 1.1p1, 2004-03-19
 *** demonstration/decoder        ***  (c) 2001--2004 Bertrand Petit
 ************************************
