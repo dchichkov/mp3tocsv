@@ -214,7 +214,7 @@ static int ProcessFrame(struct mad_frame *Frame)
                             ProgName, result, Counter, Channel, Sample);
                         return result;
                     }
-					if(scnCounter != Counter || scnChannel != Channel || scnSample != Sample)
+					if(scnChannel != Channel || scnSample != Sample)
 					{
 						fprintf(stderr,"%s invalid counters: %d,%d,%d  %d,%d,%d\n",ProgName,
 								Counter, Channel, Sample,  scnCounter, scnChannel, scnSample);
