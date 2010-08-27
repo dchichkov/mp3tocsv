@@ -64,7 +64,7 @@
  * messages.
  */
 const char	*ProgName;
-int DoOutput = 0, DoInput = 0;
+int DoWrite = 0, DoRead = 0;
 FILE *CSVFp = NULL;
 
 
@@ -188,22 +188,49 @@ static int PrintFrameInfo(FILE *fp, struct mad_header *Header)
 /****************************************************************************
  * Process a frequency-domain filter to audio data in the subband-domain.	*
  ****************************************************************************/
-static void ProcessFrame(struct mad_frame *Frame)
+static int ProcessFrame(struct mad_frame *Frame)
 {
-    static int counter;
-	int	Channel, Sample, Samples, SubBand;
-
-    fprintf(stderr, "\n\n");
+    static int Counter;
+	int	Channel, Sample, Samples, SubBand, result;
+	int	scnCounter, scnChannel, scnSample;
 	Samples=MAD_NSBSAMPLES(&Frame->header);
 	if(Frame->header.mode!=MAD_MODE_SINGLE_CHANNEL)
 		for(Channel=0;Channel<2;Channel++)
 			for(Sample=0;Sample<Samples;Sample++)
             {
-            fprintf(stderr, "\n%d: ", counter++);
-               for(SubBand=0;SubBand<32;SubBand++)
-                    fprintf(stderr, "%f, ", mad_f_todouble(Frame->sbsample[Channel][Sample][SubBand]));
+				if(DoWrite)
+				{
+					fprintf(CSVFp, "%d,%d,%d", Counter, Channel, Sample);
+					for(SubBand=0;SubBand<32;SubBand++)
+						fprintf(CSVFp, ",%f", mad_f_todouble(Frame->sbsample[Channel][Sample][SubBand]));
+					fprintf(CSVFp, "\n");
+				}
+				if(DoRead)
+				{
+					result = fscanf(CSVFp, "%d,%d,%d", &scnCounter, &scnChannel, &scnSample);
+					if(result == 0 || result == EOF) return result;
+					if(scnCounter != Counter || scnChannel != Channel || scnSample != Sample)
+					{
+						fprintf(stderr,"%s invalid counters: %d,%d,%d  %d,%d,%d\n",ProgName,
+								Counter, Channel, Sample,  scnCounter, scnChannel, scnSample);
+						return -1;
+					}
+
+					for(SubBand=0;SubBand<32;SubBand++)
+					{
+						double sample = 0.0;
+						result = fscanf(CSVFp, ",%lf", &sample);
+						Frame->sbsample[Channel][Sample][SubBand] = mad_f_tofixed(sample);
+
+						if(result == 0 || result == EOF) return result;
+					}
+					result = fscanf(CSVFp, "\n");
+					if(result == 0 || result == EOF) return result;
+				}
             }
-                
+
+	Counter++;
+	return 1;
 }
 
 /****************************************************************************
@@ -256,6 +283,15 @@ static int MpegAudioDecoder(FILE *InputFp, FILE *OutputFp)
 	/* This is the decoding loop. */
 	do
 	{
+		if(CSVFp)
+		{
+			if(feof(CSVFp))
+			{
+				fprintf(stderr,"%s: end of CSV file.\n",ProgName);
+				break;
+			}
+
+		}
 		/* The input bucket must be filled if it becomes empty or if
 		 * it's the first execution of the loop.
 		 */
@@ -437,7 +473,16 @@ static int MpegAudioDecoder(FILE *InputFp, FILE *OutputFp)
 		 * if some processing was required. Detailed explanations are
 		 * given in the ProcessFrame() function.
 		 */
-		ProcessFrame(&Frame);
+		if(CSVFp)
+		{
+			int result = ProcessFrame(&Frame);
+			if(result != 1)
+			{
+				fprintf(stderr,"%s: read error on CSV-stream.\n", ProgName);
+				Status=1;
+				break;
+			}
+		}
 
 		/* Once decoded the frame is synthesized to PCM samples. No errors
 		 * are reported by mad_synth_frame();
@@ -570,19 +615,19 @@ static int ParseArgs(int argc, char * const argv[])
 		{
 			case 'r':
 			case 'w':
-				DoOutput = (Option == 'w');
-				DoInput = (Option == 'r');
+				DoWrite = (Option == 'w');
+				DoRead = (Option == 'r');
 
 				if(filename == NULL || !strlen(filename))
 				{
 					fprintf(stderr,"Warning: Output/Input file path was not set!\n");
-					DoOutput = 0;
+					DoWrite = DoRead = 0;
 				}
 				CSVFp = fopen (filename, &argv[1][1]);
 				if(!CSVFp)
 				{
 					fprintf(stderr,"Warning: Can't open output file!\n");
-					DoOutput = 0;
+					DoWrite = DoRead = 0;
 					return(1);
 				}
 				break;
@@ -622,6 +667,9 @@ int main(int argc, char *argv[])
 	Status=MpegAudioDecoder(stdin,stdout);
 	if(Status)
 		fprintf(stderr,"%s: an error occurred during decoding.\n",ProgName);
+
+	if(CSVFp != NULL)
+		fclose(CSVFp);
 
 	/* All done. */
 	return(Status);
