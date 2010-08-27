@@ -208,7 +208,12 @@ static int ProcessFrame(struct mad_frame *Frame)
 				if(DoRead)
 				{
 					result = fscanf(CSVFp, "%d,%d,%d", &scnCounter, &scnChannel, &scnSample);
-					if(result == 0 || result == EOF) return result;
+					if(result == 0 || result == EOF) 
+                    {
+                        fprintf(stderr,"%s expected counter value can not be found. result = %d, counters = %d,%d,%d\n",
+                            ProgName, result, Counter, Channel, Sample);
+                        return result;
+                    }
 					if(scnCounter != Counter || scnChannel != Channel || scnSample != Sample)
 					{
 						fprintf(stderr,"%s invalid counters: %d,%d,%d  %d,%d,%d\n",ProgName,
@@ -222,10 +227,20 @@ static int ProcessFrame(struct mad_frame *Frame)
 						result = fscanf(CSVFp, ",%lf", &sample);
 						Frame->sbsample[Channel][Sample][SubBand] = mad_f_tofixed(sample);
 
-						if(result == 0 || result == EOF) return result;
+						if(result == 0 || result == EOF) 
+                        {
+                            fprintf(stderr,"%s invalid sample value. result = %d, counters = %d,%d,%d\n",
+                               ProgName, result, Counter, Channel, Sample);
+                            return result;
+                        }
 					}
 					result = fscanf(CSVFp, "\n");
-					if(result == 0 || result == EOF) return result;
+                    if(result == EOF)
+                    {
+                        fprintf(stderr,"%s expected LNF is not found. result = %d, counters = %d,%d,%d\n",
+                            ProgName, result, Counter, Channel, Sample);
+                        return result;
+                    }
 				}
             }
 
@@ -592,8 +607,8 @@ static int MpegAudioDecoder(FILE *InputFp, FILE *OutputFp)
 static void PrintUsage(void)
 {
 	fprintf(stderr,"usage: %s [-r|-w] [filename] < file.mp3 | play -t cdr -\n"
-			"\t-o\tWrite SubBand values to filename;\n"
-			"\t-o\tRead SubBand values from filename;\n.",
+			"\t-w\tWrite SubBand values to filename;\n"
+			"\t-r\tRead SubBand values from filename;\n.",
 			ProgName);
 }
 

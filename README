@@ -1,11 +1,31 @@
 -*- text -*-
 
-************************************
-*** mp3tocsv, subband extractor
+*****************************************************************************************
+*** mp3tocsv, subband/MDCT export/import tool (MP3 -> comma separated text -> WAV)
+*** 
+*** This tool lets you to export or import frequency domain mp3 frame data
+*** (Sub-bands/576 MDCT coefficients) into the comma separated text file during decoding.
+*** Importing CSV allows modification of the frequincy domain data
+***  before synthesizing the MP3 file into the PCM samples.
+
 *** MP3 -> CSV -> CDR -> WAV     ***  (c) 2010 Dmitry Chichkov
-************************************
+*****************************************************************************************
 
+Usage:
+MP3 -> CSV, CDR (PCM,44100,16bit)
+ ./mp3tocsv -w hhgttg01010060.csv < hhgttg01010060.mp3 > hhgttg01010060.cdr
 
+MP3,CSV -> CDR
+ ./mp3tocsv -r hhgttg01010060.csv < hhgttg01010060.mp3 > hhgttg01010060.cdr
+
+CDR -> WAV
+ sox hhgttg01010060.cdr hhgttg01010060.wav
+
+MP3 -> PLAY
+ ./mp3tocsv < hhgttg01010060.mp3 | play -t cdr -
+
+SPLIT MP3 (60 seconds)
+ mp3splt hhgttg0101.mp3 0.0 1.0
 
 
 ************************************
