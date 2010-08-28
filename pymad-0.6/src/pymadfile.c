@@ -548,6 +548,24 @@ py_madfile_emphasis(PyObject * self, PyObject * args) {
     return PyInt_FromLong(MAD_FRAME(self).header.emphasis);
 }
 
+/* return the channels value */
+static PyObject *
+py_madfile_channels(PyObject * self, PyObject * args) {
+    return PyInt_FromLong(MAD_NCHANNELS(&MAD_FRAME(self).header));
+}
+
+/* return the samples value */
+static PyObject *
+py_madfile_samples(PyObject * self, PyObject * args) {
+    return PyInt_FromLong(MAD_NSBSAMPLES(&MAD_FRAME(self).header));
+}
+
+/* return the flags value */
+static PyObject *
+py_madfile_flags(PyObject * self, PyObject * args) {
+    return PyInt_FromLong(MAD_FRAME(self).header.flags);
+}
+
 /* return the estimated playtime of the track, in milliseconds */
 static PyObject *
 py_madfile_total_time(PyObject * self, PyObject * args) {
@@ -640,8 +658,7 @@ py_madfile_subband_value(PyObject * self, PyObject * args)
         return NULL;
     }
     if(		channel < 0
-    	|| 	channel > 2
-    	|| (frame->header.mode == MAD_MODE_SINGLE_CHANNEL && channel > 1))
+    	|| 	channel >= MAD_NCHANNELS(&frame->header))
     {
         PyErr_SetString(PyExc_TypeError, "invalid channel number");
         return NULL;
@@ -688,6 +705,9 @@ static PyMethodDef madfile_methods[] = {
     { "samplerate", py_madfile_samplerate, METH_VARARGS, "" },
     { "bitrate", py_madfile_bitrate, METH_VARARGS, "" },
     { "emphasis", py_madfile_emphasis, METH_VARARGS, "" },
+    { "channels", py_madfile_channels, METH_VARARGS, "" },
+    { "samples", py_madfile_samples, METH_VARARGS, "" },
+    { "flags", py_madfile_flags, METH_VARARGS, "" },
     { "total_time", py_madfile_total_time, METH_VARARGS, "" },
     { "current_time", py_madfile_current_time, METH_VARARGS, "" },
     { "seek_time", py_madfile_seek_time, METH_VARARGS, "" },

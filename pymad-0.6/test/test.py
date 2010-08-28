@@ -15,6 +15,7 @@ def fCallback(mf):
             for subband in xrange(32):
                 value = mf.subband_value(channel, sample, subband)
                 mf.subband_value(channel, sample, subband, value*0.5)
+    # return False to stop
 
 
 def play(u):
